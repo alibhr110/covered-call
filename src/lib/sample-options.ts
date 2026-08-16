@@ -1,15 +1,23 @@
 // نمونه داده‌های اختیار خرید برای اسکنر (قابل ویرایش/افزودن توسط کاربر)
 export interface OptionRow {
   id: string;
-  symbol: string; // نماد سهم پایه
+  symbol: string; // نماد دارایی پایه
   optionSymbol: string; // نماد اختیار
-  underlyingPrice: number;
+  ask: number; // قیمت اولین فروشنده اختیار (پرمیوم)
+  bid: number; // قیمت اولین خریدار اختیار
+  last: number; // آخرین معامله اختیار
+  volume: number; // حجم معاملات اختیار
   strikePrice: number;
-  premium: number; // قیمت اختیار (پرمیوم)
   expiryDate: string; // YYYY-MM-DD
   contractSize: number;
-  openInterest?: number; // موقعیت‌های باز
-  volume?: number;
+  underlyingPrice: number; // آخرین قیمت دارایی پایه
+  underlyingAsk: number; // صف اول فروشندگان پایه
+  underlyingBid: number; // صف اول خریداران پایه
+  underlyingRef: number; // قیمت مرجع (پایانی دیروز) برای محاسبه دامنه نوسان
+  sigmaPct: number; // نوسان سالانه تخمینی (٪)
+  openInterest?: number;
+  /** پرمیوم پیش‌فرض برای ماشین‌حساب */
+  premium?: number;
 }
 
 const inMonths = (m: number) => {
@@ -18,77 +26,119 @@ const inMonths = (m: number) => {
   return d.toISOString().slice(0, 10);
 };
 
+const inDays = (n: number) => {
+  const d = new Date();
+  d.setDate(d.getDate() + n);
+  return d.toISOString().slice(0, 10);
+};
+
 export const SAMPLE_OPTIONS: OptionRow[] = [
   {
     id: "1",
     symbol: "فولاد",
     optionSymbol: "ضفلا۷۰۲۵",
-    underlyingPrice: 5800,
+    ask: 340,
+    bid: 310,
+    last: 320,
+    volume: 3200,
     strikePrice: 6000,
-    premium: 320,
     expiryDate: inMonths(1),
     contractSize: 1000,
+    underlyingPrice: 5800,
+    underlyingAsk: 5810,
+    underlyingBid: 5795,
+    underlyingRef: 5750,
+    sigmaPct: 45,
     openInterest: 12500,
-    volume: 3200,
   },
   {
     id: "2",
     symbol: "خودرو",
     optionSymbol: "ضخود۷۰۳۰",
-    underlyingPrice: 2950,
+    ask: 195,
+    bid: 170,
+    last: 180,
+    volume: 2100,
     strikePrice: 3200,
-    premium: 180,
     expiryDate: inMonths(2),
     contractSize: 1000,
+    underlyingPrice: 2950,
+    underlyingAsk: 2955,
+    underlyingBid: 2940,
+    underlyingRef: 2900,
+    sigmaPct: 60,
     openInterest: 8400,
-    volume: 2100,
   },
   {
     id: "3",
     symbol: "شستا",
     optionSymbol: "ضستا۷۰۵۰",
-    underlyingPrice: 1420,
-    strikePrice: 1500,
-    premium: 95,
-    expiryDate: inMonths(1),
-    contractSize: 1000,
-    openInterest: 5600,
+    ask: 105,
+    bid: 90,
+    last: 95,
     volume: 1800,
+    strikePrice: 1500,
+    expiryDate: inDays(12),
+    contractSize: 1000,
+    underlyingPrice: 1420,
+    underlyingAsk: 1425,
+    underlyingBid: 1418,
+    underlyingRef: 1400,
+    sigmaPct: 40,
+    openInterest: 5600,
   },
   {
     id: "4",
     symbol: "فملی",
     optionSymbol: "ضملی۷۰۸۰",
-    underlyingPrice: 8200,
+    ask: 440,
+    bid: 405,
+    last: 420,
+    volume: 2900,
     strikePrice: 8500,
-    premium: 420,
     expiryDate: inMonths(2),
     contractSize: 1000,
+    underlyingPrice: 8200,
+    underlyingAsk: 8210,
+    underlyingBid: 8180,
+    underlyingRef: 8100,
+    sigmaPct: 42,
     openInterest: 9800,
-    volume: 2900,
   },
   {
     id: "5",
     symbol: "شپنا",
     optionSymbol: "ضپنا۷۰۱۰",
-    underlyingPrice: 6700,
-    strikePrice: 7000,
-    premium: 380,
-    expiryDate: inMonths(1),
-    contractSize: 1000,
-    openInterest: 7100,
+    ask: 395,
+    bid: 365,
+    last: 380,
     volume: 2400,
+    strikePrice: 7000,
+    expiryDate: inDays(25),
+    contractSize: 1000,
+    underlyingPrice: 6700,
+    underlyingAsk: 6720,
+    underlyingBid: 6690,
+    underlyingRef: 6650,
+    sigmaPct: 48,
+    openInterest: 7100,
   },
   {
     id: "6",
     symbol: "وبملت",
     optionSymbol: "ضملت۷۰۴۰",
-    underlyingPrice: 3850,
-    strikePrice: 4000,
-    premium: 220,
-    expiryDate: inMonths(1),
-    contractSize: 1000,
-    openInterest: 6300,
+    ask: 235,
+    bid: 210,
+    last: 220,
     volume: 1500,
+    strikePrice: 4000,
+    expiryDate: inDays(5),
+    contractSize: 1000,
+    underlyingPrice: 4150,
+    underlyingAsk: 4160,
+    underlyingBid: 4145,
+    underlyingRef: 4100,
+    sigmaPct: 50,
+    openInterest: 6300,
   },
 ];
