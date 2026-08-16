@@ -29,9 +29,9 @@ function Dashboard() {
   const sendToCalculator = (row: OptionRow) => {
     setCalcInitial({
       symbol: row.symbol,
-      underlyingPrice: row.underlyingPrice,
+      underlyingPrice: row.underlyingAsk || row.underlyingPrice,
       strikePrice: row.strikePrice,
-      premium: row.premium,
+      premium: row.ask,
       contractSize: row.contractSize,
       expiryDate: row.expiryDate,
     });
