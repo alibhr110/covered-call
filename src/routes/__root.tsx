@@ -90,6 +90,10 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       },
       {
         rel: "stylesheet",
+        href: "https://cdn.jsdelivr.net/gh/aminabedi68/Estedad@v9.1.0/dist/font-face.css",
+      },
+      {
+        rel: "stylesheet",
         href: "https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;600;700;800&display=swap",
       },
       {
