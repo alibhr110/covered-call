@@ -227,7 +227,7 @@ export function OpportunityScanner({
           : String(av).localeCompare(String(bv), "fa");
       return sortDir === "asc" ? cmp : -cmp;
     });
-  }, [entries, filters, sortKey, sortDir]);
+  }, [entries, filters, sortKey, sortDir, COLS]);
 
   const toggleSort = (key: string) => {
     if (key === sortKey) setSortDir((d) => (d === "asc" ? "desc" : "asc"));
