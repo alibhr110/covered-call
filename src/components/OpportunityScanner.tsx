@@ -440,6 +440,7 @@ function AddRowForm({
     underlyingBid: 0,
     underlyingRef: 0,
     sigmaPct: 45,
+    assetType: "stock",
   });
 
   const num = (v: string) => Number(fromPersianDigits(v).replace(/[^\d.]/g, "")) || 0;
@@ -491,6 +492,18 @@ function AddRowForm({
           value={form.underlyingRef}
           onChange={setNum("underlyingRef")}
         />
+        <Field label="نوع دارایی پایه">
+          <select
+            value={form.assetType}
+            onChange={(e) =>
+              setForm({ ...form, assetType: e.target.value as "stock" | "fund" })
+            }
+            className="h-10 w-full rounded-md border border-input bg-background px-3 text-right text-sm"
+          >
+            <option value="stock">سهام (دامنه سهام)</option>
+            <option value="fund">صندوق اهرمی (دامنه صندوق)</option>
+          </select>
+        </Field>
         <NumField label="نوسان سالانه (٪)" value={form.sigmaPct} onChange={setNum("sigmaPct")} />
         <NumField
           label="اندازه قرارداد"
@@ -538,6 +551,32 @@ function NumField({
         className="h-10 text-right tabular-nums"
       />
     </Field>
+  );
+}
+
+function CfgField({
+  label,
+  hint,
+  value,
+  onChange,
+}: {
+  label: string;
+  hint: string;
+  value: number;
+  onChange: (v: number) => void;
+}) {
+  return (
+    <div className="space-y-1.5">
+      <Label className="text-xs font-medium">{label}</Label>
+      <Input
+        value={toPersianDigits(value)}
+        onChange={(e) =>
+          onChange(Number(fromPersianDigits(e.target.value).replace(/[^\d.]/g, "")) || 0)
+        }
+        className="h-10 text-right tabular-nums"
+      />
+      <p className="text-[11px] leading-4 text-muted-foreground">{hint}</p>
+    </div>
   );
 }
 
