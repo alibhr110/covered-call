@@ -241,6 +241,27 @@ export function OpportunityScanner({
 
   return (
     <div className="space-y-4">
+      <Card className="grid gap-4 p-4 shadow-card sm:grid-cols-3">
+        <CfgField
+          label="سناریوی ریزش دارایی پایه (٪)"
+          hint="بازده سالانه در این ریزش، در ستون آخر جدول نمایش داده می‌شود"
+          value={cfg.dropPct}
+          onChange={(v) => setCfg((c) => ({ ...c, dropPct: v }))}
+        />
+        <CfgField
+          label="دامنه نوسان سهام (٪)"
+          hint="پیش‌فرض ۳٪ — قابل تغییر توسط سازمان بورس"
+          value={cfg.stockLimitPct}
+          onChange={(v) => setCfg((c) => ({ ...c, stockLimitPct: v }))}
+        />
+        <CfgField
+          label="دامنه نوسان صندوق اهرمی (٪)"
+          hint="پیش‌فرض ۴٪"
+          value={cfg.fundLimitPct}
+          onChange={(v) => setCfg((c) => ({ ...c, fundLimitPct: v }))}
+        />
+      </Card>
+
       <Card className="flex flex-wrap items-center justify-between gap-3 p-4 shadow-card">
         <p className="text-xs text-muted-foreground">
           در ردیف زیر عنوان هر ستون می‌توانید فیلتر بگذارید — برای ستون‌های عددی از
