@@ -192,10 +192,17 @@ export function OpportunityScanner({
   const [sortKey, setSortKey] = useState<string>("askAnnualPct");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
   const [showAdd, setShowAdd] = useState(false);
+  const [cfg, setCfg] = useLocalStorage<ScanConfig>("cc:config:v1", {
+    dropPct: 20,
+    stockLimitPct: DAILY_LIMIT_PCT,
+    fundLimitPct: FUND_LIMIT_PCT,
+  });
+
+  const COLS = useMemo(() => buildCols(cfg.dropPct), [cfg.dropPct]);
 
   const entries = useMemo<Entry[]>(
-    () => rows.map((row) => ({ row, m: computeMetrics(row) })),
-    [rows],
+    () => rows.map((row) => ({ row, m: computeMetrics(row, cfg) })),
+    [rows, cfg],
   );
 
   const visible = useMemo(() => {
