@@ -3,8 +3,9 @@ import { daysBetween, todayISO } from "./format";
 
 // نرخ بدون ریسک تقریبی بازار ایران (اوراق اخزا)
 export const RISK_FREE = 0.3;
-// دامنه نوسان روزانه سهام (٪)
-export const DAILY_LIMIT_PCT = 5;
+// دامنه نوسان روزانه پیش‌فرض (٪) — سازمان بورس این مقادیر را تغییر می‌دهد
+export const DAILY_LIMIT_PCT = 3; // سهام
+export const FUND_LIMIT_PCT = 4; // صندوق‌های اهرمی
 
 function normCdf(x: number): number {
   // تقریب Abramowitz-Stegun
@@ -92,4 +93,24 @@ export function ccReturnPct(
 
 export function annualize(pct: number, days: number): number {
   return (pct * 365) / Math.max(1, days);
+}
+
+
+/**
+ * بازده سالانه کاوردکال در سناریوی ریزش دارایی پایه به میزان dropPct درصد
+ * (فرض: در سررسید قیمت پایه به اندازه dropPct افت کرده است)
+ */
+export function scenarioAnnualPct(
+  underlyingPrice: number,
+  strike: number,
+  premium: number,
+  dropPct: number,
+  days: number,
+): number {
+  const net = underlyingPrice - premium;
+  if (net <= 0) return 0;
+  const future = underlyingPrice * (1 - dropPct / 100);
+  const payoff = Math.min(future, strike);
+  const ret = ((payoff - net) / net) * 100;
+  return annualize(ret, days);
 }

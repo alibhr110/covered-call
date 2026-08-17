@@ -16,11 +16,19 @@ import { useLocalStorage } from "@/lib/storage";
 import { SAMPLE_OPTIONS, type OptionRow } from "@/lib/sample-options";
 import {
   DAILY_LIMIT_PCT,
+  FUND_LIMIT_PCT,
   annualize,
   blackScholesIran,
   ccReturnPct,
   daysToExpiry,
+  scenarioAnnualPct,
 } from "@/lib/pricing";
+
+interface ScanConfig {
+  dropPct: number;
+  stockLimitPct: number;
+  fundLimitPct: number;
+}
 
 interface Metrics {
   days: number;
@@ -35,14 +43,17 @@ interface Metrics {
   toSellQueuePct: number;
   bsPrice: number;
   delta: number;
+  dropAnnualPct: number;
+  dropDeltaPct: number;
 }
 
-function computeMetrics(r: OptionRow): Metrics {
+function computeMetrics(r: OptionRow, cfg: ScanConfig): Metrics {
+  const limit = r.assetType === "fund" ? cfg.fundLimitPct : cfg.stockLimitPct;
   const days = daysToExpiry(r.expiryDate);
   const moneynessPct = ((r.underlyingPrice - r.strikePrice) / r.strikePrice) * 100;
 
-  const upper = r.underlyingRef * (1 + DAILY_LIMIT_PCT / 100);
-  const lower = r.underlyingRef * (1 - DAILY_LIMIT_PCT / 100);
+  const upper = r.underlyingRef * (1 + limit / 100);
+  const lower = r.underlyingRef * (1 - limit / 100);
   const toBuyQueuePct = ((upper - r.underlyingPrice) / r.underlyingPrice) * 100;
   const toSellQueuePct = ((r.underlyingPrice - lower) / r.underlyingPrice) * 100;
 
@@ -59,6 +70,9 @@ function computeMetrics(r: OptionRow): Metrics {
     distToSellQueuePct: toSellQueuePct,
   });
 
+  const base = r.underlyingAsk || r.underlyingPrice;
+  const dropAnnualPct = scenarioAnnualPct(base, r.strikePrice, r.ask, cfg.dropPct, days);
+
   return {
     days,
     moneynessPct,
@@ -72,6 +86,8 @@ function computeMetrics(r: OptionRow): Metrics {
     toSellQueuePct,
     bsPrice: bs.adjusted,
     delta: bs.delta,
+    dropAnnualPct,
+    dropDeltaPct: dropAnnualPct - annualize(askReturnPct, days),
   };
 }
 
@@ -88,7 +104,7 @@ interface Col {
   tone?: (e: Entry) => string;
 }
 
-const COLS: Col[] = [
+const buildCols = (dropPct: number): Col[] => [
   { key: "optionSymbol", label: "نماد آپشن", kind: "text", get: (e) => e.row.optionSymbol },
   { key: "symbol", label: "دارایی پایه", kind: "text", get: (e) => e.row.symbol },
   { key: "ask", label: "پرمیوم ask", kind: "price", get: (e) => e.row.ask },
@@ -125,6 +141,13 @@ const COLS: Col[] = [
   },
   { key: "bsPrice", label: "بلک‌شولز (ایران)", kind: "price", get: (e) => e.m.bsPrice },
   { key: "delta", label: "دلتا", kind: "decimal", get: (e) => e.m.delta },
+  {
+    key: "dropAnnualPct",
+    label: `بازده سالانه با ریزش ${toPersianDigits(dropPct)}٪`,
+    kind: "percent",
+    get: (e) => e.m.dropAnnualPct,
+    tone: (e) => (e.m.dropAnnualPct >= 0 ? "text-accent" : "text-destructive"),
+  },
 ];
 
 /** فیلتر عددی: «>10» «<5» «5-20» «=3» یا عدد ساده (حداقل) */
@@ -169,10 +192,17 @@ export function OpportunityScanner({
   const [sortKey, setSortKey] = useState<string>("askAnnualPct");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
   const [showAdd, setShowAdd] = useState(false);
+  const [cfg, setCfg] = useLocalStorage<ScanConfig>("cc:config:v1", {
+    dropPct: 20,
+    stockLimitPct: DAILY_LIMIT_PCT,
+    fundLimitPct: FUND_LIMIT_PCT,
+  });
+
+  const COLS = useMemo(() => buildCols(cfg.dropPct), [cfg.dropPct]);
 
   const entries = useMemo<Entry[]>(
-    () => rows.map((row) => ({ row, m: computeMetrics(row) })),
-    [rows],
+    () => rows.map((row) => ({ row, m: computeMetrics(row, cfg) })),
+    [rows, cfg],
   );
 
   const visible = useMemo(() => {
@@ -197,7 +227,7 @@ export function OpportunityScanner({
           : String(av).localeCompare(String(bv), "fa");
       return sortDir === "asc" ? cmp : -cmp;
     });
-  }, [entries, filters, sortKey, sortDir]);
+  }, [entries, filters, sortKey, sortDir, COLS]);
 
   const toggleSort = (key: string) => {
     if (key === sortKey) setSortDir((d) => (d === "asc" ? "desc" : "asc"));
@@ -211,6 +241,27 @@ export function OpportunityScanner({
 
   return (
     <div className="space-y-4">
+      <Card className="grid gap-4 p-4 shadow-card sm:grid-cols-3">
+        <CfgField
+          label="سناریوی ریزش دارایی پایه (٪)"
+          hint="بازده سالانه در این ریزش، در ستون آخر جدول نمایش داده می‌شود"
+          value={cfg.dropPct}
+          onChange={(v) => setCfg((c) => ({ ...c, dropPct: v }))}
+        />
+        <CfgField
+          label="دامنه نوسان سهام (٪)"
+          hint="پیش‌فرض ۳٪ — قابل تغییر توسط سازمان بورس"
+          value={cfg.stockLimitPct}
+          onChange={(v) => setCfg((c) => ({ ...c, stockLimitPct: v }))}
+        />
+        <CfgField
+          label="دامنه نوسان صندوق اهرمی (٪)"
+          hint="پیش‌فرض ۴٪"
+          value={cfg.fundLimitPct}
+          onChange={(v) => setCfg((c) => ({ ...c, fundLimitPct: v }))}
+        />
+      </Card>
+
       <Card className="flex flex-wrap items-center justify-between gap-3 p-4 shadow-card">
         <p className="text-xs text-muted-foreground">
           در ردیف زیر عنوان هر ستون می‌توانید فیلتر بگذارید — برای ستون‌های عددی از
@@ -389,6 +440,7 @@ function AddRowForm({
     underlyingBid: 0,
     underlyingRef: 0,
     sigmaPct: 45,
+    assetType: "stock",
   });
 
   const num = (v: string) => Number(fromPersianDigits(v).replace(/[^\d.]/g, "")) || 0;
@@ -440,6 +492,18 @@ function AddRowForm({
           value={form.underlyingRef}
           onChange={setNum("underlyingRef")}
         />
+        <Field label="نوع دارایی پایه">
+          <select
+            value={form.assetType}
+            onChange={(e) =>
+              setForm({ ...form, assetType: e.target.value as "stock" | "fund" })
+            }
+            className="h-10 w-full rounded-md border border-input bg-background px-3 text-right text-sm"
+          >
+            <option value="stock">سهام (دامنه سهام)</option>
+            <option value="fund">صندوق اهرمی (دامنه صندوق)</option>
+          </select>
+        </Field>
         <NumField label="نوسان سالانه (٪)" value={form.sigmaPct} onChange={setNum("sigmaPct")} />
         <NumField
           label="اندازه قرارداد"
@@ -487,6 +551,32 @@ function NumField({
         className="h-10 text-right tabular-nums"
       />
     </Field>
+  );
+}
+
+function CfgField({
+  label,
+  hint,
+  value,
+  onChange,
+}: {
+  label: string;
+  hint: string;
+  value: number;
+  onChange: (v: number) => void;
+}) {
+  return (
+    <div className="space-y-1.5">
+      <Label className="text-xs font-medium">{label}</Label>
+      <Input
+        value={toPersianDigits(value)}
+        onChange={(e) =>
+          onChange(Number(fromPersianDigits(e.target.value).replace(/[^\d.]/g, "")) || 0)
+        }
+        className="h-10 text-right tabular-nums"
+      />
+      <p className="text-[11px] leading-4 text-muted-foreground">{hint}</p>
+    </div>
   );
 }
 
