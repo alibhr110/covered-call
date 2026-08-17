@@ -16,11 +16,19 @@ import { useLocalStorage } from "@/lib/storage";
 import { SAMPLE_OPTIONS, type OptionRow } from "@/lib/sample-options";
 import {
   DAILY_LIMIT_PCT,
+  FUND_LIMIT_PCT,
   annualize,
   blackScholesIran,
   ccReturnPct,
   daysToExpiry,
+  scenarioAnnualPct,
 } from "@/lib/pricing";
+
+interface ScanConfig {
+  dropPct: number;
+  stockLimitPct: number;
+  fundLimitPct: number;
+}
 
 interface Metrics {
   days: number;
@@ -35,14 +43,17 @@ interface Metrics {
   toSellQueuePct: number;
   bsPrice: number;
   delta: number;
+  dropAnnualPct: number;
+  dropDeltaPct: number;
 }
 
-function computeMetrics(r: OptionRow): Metrics {
+function computeMetrics(r: OptionRow, cfg: ScanConfig): Metrics {
+  const limit = r.assetType === "fund" ? cfg.fundLimitPct : cfg.stockLimitPct;
   const days = daysToExpiry(r.expiryDate);
   const moneynessPct = ((r.underlyingPrice - r.strikePrice) / r.strikePrice) * 100;
 
-  const upper = r.underlyingRef * (1 + DAILY_LIMIT_PCT / 100);
-  const lower = r.underlyingRef * (1 - DAILY_LIMIT_PCT / 100);
+  const upper = r.underlyingRef * (1 + limit / 100);
+  const lower = r.underlyingRef * (1 - limit / 100);
   const toBuyQueuePct = ((upper - r.underlyingPrice) / r.underlyingPrice) * 100;
   const toSellQueuePct = ((r.underlyingPrice - lower) / r.underlyingPrice) * 100;
 
@@ -59,6 +70,9 @@ function computeMetrics(r: OptionRow): Metrics {
     distToSellQueuePct: toSellQueuePct,
   });
 
+  const base = r.underlyingAsk || r.underlyingPrice;
+  const dropAnnualPct = scenarioAnnualPct(base, r.strikePrice, r.ask, cfg.dropPct, days);
+
   return {
     days,
     moneynessPct,
@@ -72,6 +86,8 @@ function computeMetrics(r: OptionRow): Metrics {
     toSellQueuePct,
     bsPrice: bs.adjusted,
     delta: bs.delta,
+    dropAnnualPct,
+    dropDeltaPct: dropAnnualPct - annualize(askReturnPct, days),
   };
 }
 
@@ -88,7 +104,7 @@ interface Col {
   tone?: (e: Entry) => string;
 }
 
-const COLS: Col[] = [
+const buildCols = (dropPct: number): Col[] => [
   { key: "optionSymbol", label: "نماد آپشن", kind: "text", get: (e) => e.row.optionSymbol },
   { key: "symbol", label: "دارایی پایه", kind: "text", get: (e) => e.row.symbol },
   { key: "ask", label: "پرمیوم ask", kind: "price", get: (e) => e.row.ask },
@@ -125,6 +141,13 @@ const COLS: Col[] = [
   },
   { key: "bsPrice", label: "بلک‌شولز (ایران)", kind: "price", get: (e) => e.m.bsPrice },
   { key: "delta", label: "دلتا", kind: "decimal", get: (e) => e.m.delta },
+  {
+    key: "dropAnnualPct",
+    label: `بازده سالانه با ریزش ${toPersianDigits(dropPct)}٪`,
+    kind: "percent",
+    get: (e) => e.m.dropAnnualPct,
+    tone: (e) => (e.m.dropAnnualPct >= 0 ? "text-accent" : "text-destructive"),
+  },
 ];
 
 /** فیلتر عددی: «>10» «<5» «5-20» «=3» یا عدد ساده (حداقل) */

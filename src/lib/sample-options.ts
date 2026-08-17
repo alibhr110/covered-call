@@ -15,6 +15,8 @@ export interface OptionRow {
   underlyingBid: number; // صف اول خریداران پایه
   underlyingRef: number; // قیمت مرجع (پایانی دیروز) برای محاسبه دامنه نوسان
   sigmaPct: number; // نوسان سالانه تخمینی (٪)
+  /** نوع دارایی پایه: سهام یا صندوق اهرمی (برای دامنه نوسان) */
+  assetType?: "stock" | "fund";
   openInterest?: number;
   /** پرمیوم پیش‌فرض برای ماشین‌حساب */
   premium?: number;
