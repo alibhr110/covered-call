@@ -8,9 +8,30 @@ const PROXIES: ((u: string) => string)[] = [
   (u) => `https://corsproxy.io/?${encodeURIComponent(u)}`,
 ];
 
+/** آدرس واسط روی VPS ایران را به endpoint خام تبدیل می‌کند */
+export function proxyEndpoint(base: string): string {
+  const clean = base.trim().replace(/\/+$/, "");
+  const withScheme = /^https?:\/\//i.test(clean) ? clean : `http://${clean}`;
+  return /\/tsetmc(\/|$)/.test(withScheme) ? withScheme : `${withScheme}/tsetmc`;
+}
+
 /** تلاش برای دریافت داده از مرورگر؛ در صورت شکست خطا پرتاب می‌شود. */
-export async function fetchCallOptionsFromBrowser(): Promise<OptionRow[]> {
+export async function fetchCallOptionsFromBrowser(proxyBase?: string): Promise<OptionRow[]> {
   let lastErr = "";
+  const direct: string[] = proxyBase ? [proxyEndpoint(proxyBase)] : [];
+
+  for (const url of direct) {
+    try {
+      const res = await fetch(url, { signal: AbortSignal.timeout(15000) });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const text = await res.text();
+      if (text.split("@").length < 4) throw new Error("پاسخ نامعتبر از VPS");
+      return buildCallOptions(text);
+    } catch (e) {
+      lastErr = `VPS: ${e instanceof Error ? e.message : String(e)}`;
+    }
+  }
+
   for (const base of TSETMC_URLS.slice(0, 2)) {
     for (const wrap of PROXIES) {
       try {
