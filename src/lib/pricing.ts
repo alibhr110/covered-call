@@ -28,6 +28,10 @@ export interface BsInput {
   distToBuyQueuePct?: number;
   /** فاصله تا صف فروش (٪) */
   distToSellQueuePct?: number;
+  /** نرخ بدون ریسک (٪) — قابل تنظیم توسط کاربر */
+  riskFreePct?: number;
+  /** دامنه نوسان روزانه دارایی پایه (٪) */
+  limitPct?: number;
 }
 
 export interface BsResult {
