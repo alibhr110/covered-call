@@ -28,6 +28,7 @@ interface ScanConfig {
   dropPct: number;
   stockLimitPct: number;
   fundLimitPct: number;
+  riskFreePct?: number;
 }
 
 interface Metrics {
