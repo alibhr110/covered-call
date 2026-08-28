@@ -205,6 +205,52 @@ export function OpportunityScanner({
     riskFreePct: RISK_FREE * 100,
   });
 
+  // ——— داده لحظه‌ای بازار (TSETMC) ———
+  const fetchLive = useServerFn(getLiveCallOptions);
+  const [live, setLive] = useState<{
+    loading: boolean;
+    error: string | null;
+    at: string | null;
+    count: number;
+  }>({ loading: false, error: null, at: null, count: 0 });
+  const [autoRefresh, setAutoRefresh] = useLocalStorage<boolean>("cc:auto:v1", false);
+  const liveRef = useRef<() => void>(() => {});
+
+  const loadLive = async () => {
+    setLive((s) => ({ ...s, loading: true, error: null }));
+    try {
+      const res = await fetchLive();
+      if (res.error) {
+        setLive({ loading: false, error: res.error, at: res.fetchedAt, count: 0 });
+        return;
+      }
+      setRows((prev) => {
+        const sigma = new Map(prev.map((r) => [r.optionSymbol, r.sigmaPct]));
+        return res.rows.map((r) => ({ ...r, sigmaPct: sigma.get(r.optionSymbol) ?? r.sigmaPct }));
+      });
+      setLive({
+        loading: false,
+        error: null,
+        at: res.fetchedAt,
+        count: res.rows.length,
+      });
+    } catch (e) {
+      setLive({
+        loading: false,
+        error: e instanceof Error ? e.message : "خطا در دریافت داده",
+        at: null,
+        count: 0,
+      });
+    }
+  };
+  liveRef.current = () => void loadLive();
+
+  useEffect(() => {
+    if (!autoRefresh) return;
+    const t = setInterval(() => liveRef.current(), 60_000);
+    return () => clearInterval(t);
+  }, [autoRefresh]);
+
   const COLS = useMemo(() => buildCols(cfg.dropPct), [cfg.dropPct]);
 
   const entries = useMemo<Entry[]>(
