@@ -246,7 +246,7 @@ export function OpportunityScanner({
 
   return (
     <div className="space-y-4">
-      <Card className="grid gap-4 p-4 shadow-card sm:grid-cols-3">
+      <Card className="grid gap-4 p-4 shadow-card sm:grid-cols-2 lg:grid-cols-4">
         <CfgField
           label="سناریوی ریزش دارایی پایه (٪)"
           hint="بازده سالانه در این ریزش، در ستون آخر جدول نمایش داده می‌شود"
@@ -265,7 +265,15 @@ export function OpportunityScanner({
           value={cfg.fundLimitPct}
           onChange={(v) => setCfg((c) => ({ ...c, fundLimitPct: v }))}
         />
+        <CfgField
+          label="نرخ سود بدون ریسک (٪)"
+          hint="ورودی مدل بلک‌شولز — پیش‌فرض ۳۰٪"
+          value={cfg.riskFreePct ?? RISK_FREE * 100}
+          onChange={(v) => setCfg((c) => ({ ...c, riskFreePct: v }))}
+        />
       </Card>
+
+
 
       <Card className="flex flex-wrap items-center justify-between gap-3 p-4 shadow-card">
         <p className="text-xs text-muted-foreground">
