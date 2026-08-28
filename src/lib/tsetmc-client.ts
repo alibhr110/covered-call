@@ -21,6 +21,15 @@ export async function fetchCallOptionsFromBrowser(proxyBase?: string): Promise<O
   const direct: string[] = proxyBase ? [proxyEndpoint(proxyBase)] : [];
 
   for (const url of direct) {
+    if (
+      typeof window !== "undefined" &&
+      window.location.protocol === "https:" &&
+      url.startsWith("http://")
+    ) {
+      lastErr =
+        "VPS: مرورگر اجازه نمی‌دهد صفحه https به آدرس http وصل شود (Mixed Content). برای VPS گواهی SSL بگیرید یا از سرور استفاده کنید.";
+      continue;
+    }
     try {
       const res = await fetch(url, { signal: AbortSignal.timeout(15000) });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -31,6 +40,7 @@ export async function fetchCallOptionsFromBrowser(proxyBase?: string): Promise<O
       lastErr = `VPS: ${e instanceof Error ? e.message : String(e)}`;
     }
   }
+
 
   for (const base of TSETMC_URLS.slice(0, 2)) {
     for (const wrap of PROXIES) {
