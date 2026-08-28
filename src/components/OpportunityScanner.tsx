@@ -214,7 +214,9 @@ export function OpportunityScanner({
     count: number;
   }>({ loading: false, error: null, at: null, count: 0 });
   const [autoRefresh, setAutoRefresh] = useLocalStorage<boolean>("cc:auto:v1", false);
+  const [proxyBase, setProxyBase] = useLocalStorage<string>("cc:proxy:v1", "http://87.107.5.114:8787");
   const liveRef = useRef<() => void>(() => {});
+
 
   const loadLive = async () => {
     setLive((s) => ({ ...s, loading: true, error: null }));
@@ -233,7 +235,7 @@ export function OpportunityScanner({
 
     let serverErr = "";
     try {
-      const res = await fetchLive();
+      const res = await fetchLive({ data: { proxyBase: proxyBase || undefined } });
       if (!res.error && res.rows.length > 0) {
         apply(res.rows);
         return;
@@ -246,7 +248,8 @@ export function OpportunityScanner({
     // سرور (خارج از ایران) به TSETMC دسترسی ندارد → تلاش مستقیم از مرورگر کاربر
     try {
       const { fetchCallOptionsFromBrowser } = await import("@/lib/tsetmc-client");
-      apply(await fetchCallOptionsFromBrowser());
+      apply(await fetchCallOptionsFromBrowser(proxyBase || undefined));
+
     } catch (e) {
       const browserErr = e instanceof Error ? e.message : String(e);
       setLive({
@@ -350,7 +353,19 @@ export function OpportunityScanner({
                   : "برای بارگذاری زنجیره اختیار خرید و قیمت دارایی پایه، دکمه دریافت را بزنید."}
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto">
+          <label className="flex items-center gap-1.5 text-xs text-muted-foreground">
+            سرور واسط (VPS ایران):
+            <input
+              type="text"
+              dir="ltr"
+              value={proxyBase}
+              onChange={(e) => setProxyBase(e.target.value)}
+              placeholder="http://87.107.5.114:8787"
+              className="h-8 w-56 rounded-md border border-input bg-background px-2 text-xs"
+            />
+          </label>
+
           <label className="flex cursor-pointer items-center gap-1.5 text-xs text-muted-foreground">
             <input
               type="checkbox"
