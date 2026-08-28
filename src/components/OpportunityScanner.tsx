@@ -353,7 +353,19 @@ export function OpportunityScanner({
                   : "برای بارگذاری زنجیره اختیار خرید و قیمت دارایی پایه، دکمه دریافت را بزنید."}
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto">
+          <label className="flex items-center gap-1.5 text-xs text-muted-foreground">
+            سرور واسط (VPS ایران):
+            <input
+              type="text"
+              dir="ltr"
+              value={proxyBase}
+              onChange={(e) => setProxyBase(e.target.value)}
+              placeholder="http://87.107.5.114:8787"
+              className="h-8 w-56 rounded-md border border-input bg-background px-2 text-xs"
+            />
+          </label>
+
           <label className="flex cursor-pointer items-center gap-1.5 text-xs text-muted-foreground">
             <input
               type="checkbox"
