@@ -49,7 +49,8 @@ export function blackScholesIran(i: BsInput): BsResult {
   const K = Math.max(i.strike, 0.0001);
   const T = Math.max(i.days, 0.5) / 365;
   const sigma = Math.max(i.sigmaPct, 1) / 100;
-  const r = RISK_FREE;
+  const r = (i.riskFreePct ?? RISK_FREE * 100) / 100;
+  const limit = Math.max(i.limitPct ?? DAILY_LIMIT_PCT, 0.1);
 
   const d1 = (Math.log(S / K) + (r + (sigma * sigma) / 2) * T) / (sigma * Math.sqrt(T));
   const d2 = d1 - sigma * Math.sqrt(T);
@@ -62,17 +63,22 @@ export function blackScholesIran(i: BsInput): BsResult {
   // ۱) جریمه نقدشوندگی و یک‌طرفه بودن بازار (امکان فروش استقراضی وجود ندارد)
   timeValue *= 0.85;
 
-  // ۲) محدودیت دامنه نوسان: اگر پایه در آستانه صف فروش باشد ارزش زمانی افت می‌کند
-  const dSell = i.distToSellQueuePct ?? DAILY_LIMIT_PCT;
-  const dBuy = i.distToBuyQueuePct ?? DAILY_LIMIT_PCT;
+  // ۲) محدودیت دامنه نوسان: آستانه صف بر اساس دامنه واقعی بازار (سهام/صندوق)
+  const threshold = limit / 3; // نزدیکی به صف نسبت به پهنای دامنه
+  const dSell = i.distToSellQueuePct ?? limit;
+  const dBuy = i.distToBuyQueuePct ?? limit;
   const queueFactor =
-    dSell < 1 ? 0.75 : dBuy < 1 ? 1.08 : 1; // صف فروش → کاهش، صف خرید → افزایش
+    dSell < threshold ? 0.75 : dBuy < threshold ? 1.08 : 1; // صف فروش → کاهش، صف خرید → افزایش
   timeValue *= queueFactor;
 
-  // ۳) پوسیدگی شدید ارزش زمانی در روزهای پایانی سررسید
+  // ۳) سقف حرکت ممکن پایه تا سررسید به دلیل دامنه نوسان روزانه
+  const maxMove = S * (Math.pow(1 + limit / 100, Math.min(i.days, 60)) - 1);
+  timeValue = Math.min(timeValue, Math.max(maxMove, 0));
+
+  // ۴) پوسیدگی شدید ارزش زمانی در روزهای پایانی سررسید
   if (i.days <= 7) timeValue *= i.days / 10;
 
-  // ۴) در روزهای آخر، اختیارهای در سود معمولاً زیر ارزش ذاتی معامله می‌شوند
+  // ۵) در روزهای آخر، اختیارهای در سود معمولاً زیر ارزش ذاتی معامله می‌شوند
   const discount = i.days <= 3 && intrinsic > 0 ? 0.97 : 1;
 
   const adjusted = Math.max(0, (intrinsic + timeValue) * discount);
