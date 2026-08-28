@@ -214,7 +214,9 @@ export function OpportunityScanner({
     count: number;
   }>({ loading: false, error: null, at: null, count: 0 });
   const [autoRefresh, setAutoRefresh] = useLocalStorage<boolean>("cc:auto:v1", false);
+  const [proxyBase, setProxyBase] = useLocalStorage<string>("cc:proxy:v1", "http://87.107.5.114:8787");
   const liveRef = useRef<() => void>(() => {});
+
 
   const loadLive = async () => {
     setLive((s) => ({ ...s, loading: true, error: null }));
@@ -233,7 +235,7 @@ export function OpportunityScanner({
 
     let serverErr = "";
     try {
-      const res = await fetchLive();
+      const res = await fetchLive({ data: { proxyBase: proxyBase || undefined } });
       if (!res.error && res.rows.length > 0) {
         apply(res.rows);
         return;
@@ -246,7 +248,8 @@ export function OpportunityScanner({
     // سرور (خارج از ایران) به TSETMC دسترسی ندارد → تلاش مستقیم از مرورگر کاربر
     try {
       const { fetchCallOptionsFromBrowser } = await import("@/lib/tsetmc-client");
-      apply(await fetchCallOptionsFromBrowser());
+      apply(await fetchCallOptionsFromBrowser(proxyBase || undefined));
+
     } catch (e) {
       const browserErr = e instanceof Error ? e.message : String(e);
       setLive({
