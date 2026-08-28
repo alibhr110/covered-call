@@ -17,6 +17,7 @@ import { SAMPLE_OPTIONS, type OptionRow } from "@/lib/sample-options";
 import {
   DAILY_LIMIT_PCT,
   FUND_LIMIT_PCT,
+  RISK_FREE,
   annualize,
   blackScholesIran,
   ccReturnPct,
@@ -28,6 +29,7 @@ interface ScanConfig {
   dropPct: number;
   stockLimitPct: number;
   fundLimitPct: number;
+  riskFreePct?: number;
 }
 
 interface Metrics {
@@ -68,6 +70,8 @@ function computeMetrics(r: OptionRow, cfg: ScanConfig): Metrics {
     sigmaPct: r.sigmaPct,
     distToBuyQueuePct: toBuyQueuePct,
     distToSellQueuePct: toSellQueuePct,
+    riskFreePct: cfg.riskFreePct ?? RISK_FREE * 100,
+    limitPct: limit,
   });
 
   const base = r.underlyingAsk || r.underlyingPrice;
@@ -196,6 +200,7 @@ export function OpportunityScanner({
     dropPct: 20,
     stockLimitPct: DAILY_LIMIT_PCT,
     fundLimitPct: FUND_LIMIT_PCT,
+    riskFreePct: RISK_FREE * 100,
   });
 
   const COLS = useMemo(() => buildCols(cfg.dropPct), [cfg.dropPct]);
@@ -241,7 +246,7 @@ export function OpportunityScanner({
 
   return (
     <div className="space-y-4">
-      <Card className="grid gap-4 p-4 shadow-card sm:grid-cols-3">
+      <Card className="grid gap-4 p-4 shadow-card sm:grid-cols-2 lg:grid-cols-4">
         <CfgField
           label="سناریوی ریزش دارایی پایه (٪)"
           hint="بازده سالانه در این ریزش، در ستون آخر جدول نمایش داده می‌شود"
@@ -260,7 +265,15 @@ export function OpportunityScanner({
           value={cfg.fundLimitPct}
           onChange={(v) => setCfg((c) => ({ ...c, fundLimitPct: v }))}
         />
+        <CfgField
+          label="نرخ سود بدون ریسک (٪)"
+          hint="ورودی مدل بلک‌شولز — پیش‌فرض ۳۰٪"
+          value={cfg.riskFreePct ?? RISK_FREE * 100}
+          onChange={(v) => setCfg((c) => ({ ...c, riskFreePct: v }))}
+        />
       </Card>
+
+
 
       <Card className="flex flex-wrap items-center justify-between gap-3 p-4 shadow-card">
         <p className="text-xs text-muted-foreground">
