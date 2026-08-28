@@ -69,6 +69,8 @@ function computeMetrics(r: OptionRow, cfg: ScanConfig): Metrics {
     sigmaPct: r.sigmaPct,
     distToBuyQueuePct: toBuyQueuePct,
     distToSellQueuePct: toSellQueuePct,
+    riskFreePct: cfg.riskFreePct ?? RISK_FREE * 100,
+    limitPct: limit,
   });
 
   const base = r.underlyingAsk || r.underlyingPrice;
