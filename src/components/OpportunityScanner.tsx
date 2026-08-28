@@ -17,6 +17,7 @@ import { SAMPLE_OPTIONS, type OptionRow } from "@/lib/sample-options";
 import {
   DAILY_LIMIT_PCT,
   FUND_LIMIT_PCT,
+  RISK_FREE,
   annualize,
   blackScholesIran,
   ccReturnPct,
