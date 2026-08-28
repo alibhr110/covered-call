@@ -321,6 +321,40 @@ export function OpportunityScanner({
         />
       </Card>
 
+      <Card className="flex flex-wrap items-center justify-between gap-3 p-4 shadow-card">
+        <div className="space-y-1">
+          <p className="text-sm font-semibold">داده لحظه‌ای بازار (TSETMC)</p>
+          <p className="text-xs text-muted-foreground">
+            {live.loading
+              ? "در حال دریافت دیده‌بان بازار..."
+              : live.error
+                ? `خطا: ${live.error}`
+                : live.at
+                  ? `آخرین به‌روزرسانی: ${toPersianDigits(
+                      new Date(live.at).toLocaleTimeString("fa-IR"),
+                    )} — ${toPersianDigits(live.count)} قرارداد اختیار خرید`
+                  : "برای بارگذاری زنجیره اختیار خرید و قیمت دارایی پایه، دکمه دریافت را بزنید."}
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+          <label className="flex cursor-pointer items-center gap-1.5 text-xs text-muted-foreground">
+            <input
+              type="checkbox"
+              checked={autoRefresh}
+              onChange={(e) => setAutoRefresh(e.target.checked)}
+              className="h-3.5 w-3.5 accent-primary"
+            />
+            به‌روزرسانی خودکار (هر ۱ دقیقه)
+          </label>
+          <Button size="sm" variant="outline" disabled={live.loading} onClick={() => void loadLive()}>
+            <RefreshCw className={`ml-1 h-4 w-4 ${live.loading ? "animate-spin" : ""}`} />
+            دریافت داده لحظه‌ای
+          </Button>
+        </div>
+      </Card>
+
+
+
 
 
       <Card className="flex flex-wrap items-center justify-between gap-3 p-4 shadow-card">
