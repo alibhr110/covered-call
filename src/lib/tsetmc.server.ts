@@ -62,7 +62,6 @@ const URLS = [
   "https://old.tsetmc.com/tsev2/data/MarketWatchPlus.aspx?h=0&r=0",
   "http://old.tsetmc.com/tsev2/data/MarketWatchPlus.aspx?h=0&r=0",
   "https://main.tsetmc.com/tsev2/data/MarketWatchPlus.aspx?h=0&r=0",
-  "http://main.tsetmc.com/tsev2/data/MarketWatchPlus.aspx?h=0&r=0",
 ];
 
 async function fetchRaw(): Promise<string[]> {
