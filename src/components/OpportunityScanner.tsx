@@ -1,5 +1,7 @@
-import { useMemo, useState } from "react";
-import { Plus, Trash2, Calculator, ArrowUp, ArrowDown, FilterX } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useServerFn } from "@tanstack/react-start";
+import { Plus, Trash2, Calculator, ArrowUp, ArrowDown, FilterX, RefreshCw } from "lucide-react";
+import { getLiveCallOptions } from "@/lib/market.functions";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -203,6 +205,52 @@ export function OpportunityScanner({
     riskFreePct: RISK_FREE * 100,
   });
 
+  // ——— داده لحظه‌ای بازار (TSETMC) ———
+  const fetchLive = useServerFn(getLiveCallOptions);
+  const [live, setLive] = useState<{
+    loading: boolean;
+    error: string | null;
+    at: string | null;
+    count: number;
+  }>({ loading: false, error: null, at: null, count: 0 });
+  const [autoRefresh, setAutoRefresh] = useLocalStorage<boolean>("cc:auto:v1", false);
+  const liveRef = useRef<() => void>(() => {});
+
+  const loadLive = async () => {
+    setLive((s) => ({ ...s, loading: true, error: null }));
+    try {
+      const res = await fetchLive();
+      if (res.error) {
+        setLive({ loading: false, error: res.error, at: res.fetchedAt, count: 0 });
+        return;
+      }
+      setRows((prev) => {
+        const sigma = new Map(prev.map((r) => [r.optionSymbol, r.sigmaPct]));
+        return res.rows.map((r) => ({ ...r, sigmaPct: sigma.get(r.optionSymbol) ?? r.sigmaPct }));
+      });
+      setLive({
+        loading: false,
+        error: null,
+        at: res.fetchedAt,
+        count: res.rows.length,
+      });
+    } catch (e) {
+      setLive({
+        loading: false,
+        error: e instanceof Error ? e.message : "خطا در دریافت داده",
+        at: null,
+        count: 0,
+      });
+    }
+  };
+  liveRef.current = () => void loadLive();
+
+  useEffect(() => {
+    if (!autoRefresh) return;
+    const t = setInterval(() => liveRef.current(), 60_000);
+    return () => clearInterval(t);
+  }, [autoRefresh]);
+
   const COLS = useMemo(() => buildCols(cfg.dropPct), [cfg.dropPct]);
 
   const entries = useMemo<Entry[]>(
@@ -272,6 +320,40 @@ export function OpportunityScanner({
           onChange={(v) => setCfg((c) => ({ ...c, riskFreePct: v }))}
         />
       </Card>
+
+      <Card className="flex flex-wrap items-center justify-between gap-3 p-4 shadow-card">
+        <div className="space-y-1">
+          <p className="text-sm font-semibold">داده لحظه‌ای بازار (TSETMC)</p>
+          <p className="text-xs text-muted-foreground">
+            {live.loading
+              ? "در حال دریافت دیده‌بان بازار..."
+              : live.error
+                ? `خطا: ${live.error}`
+                : live.at
+                  ? `آخرین به‌روزرسانی: ${toPersianDigits(
+                      new Date(live.at).toLocaleTimeString("fa-IR"),
+                    )} — ${toPersianDigits(live.count)} قرارداد اختیار خرید`
+                  : "برای بارگذاری زنجیره اختیار خرید و قیمت دارایی پایه، دکمه دریافت را بزنید."}
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+          <label className="flex cursor-pointer items-center gap-1.5 text-xs text-muted-foreground">
+            <input
+              type="checkbox"
+              checked={autoRefresh}
+              onChange={(e) => setAutoRefresh(e.target.checked)}
+              className="h-3.5 w-3.5 accent-primary"
+            />
+            به‌روزرسانی خودکار (هر ۱ دقیقه)
+          </label>
+          <Button size="sm" variant="outline" disabled={live.loading} onClick={() => void loadLive()}>
+            <RefreshCw className={`ml-1 h-4 w-4 ${live.loading ? "animate-spin" : ""}`} />
+            دریافت داده لحظه‌ای
+          </Button>
+        </div>
+      </Card>
+
+
 
 
 
