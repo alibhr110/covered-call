@@ -200,6 +200,7 @@ export function OpportunityScanner({
     dropPct: 20,
     stockLimitPct: DAILY_LIMIT_PCT,
     fundLimitPct: FUND_LIMIT_PCT,
+    riskFreePct: RISK_FREE * 100,
   });
 
   const COLS = useMemo(() => buildCols(cfg.dropPct), [cfg.dropPct]);
