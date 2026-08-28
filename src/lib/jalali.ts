@@ -41,9 +41,9 @@ function g2d(gy: number, gm: number, gd: number) {
 function d2g(jdn: number) {
   let j = 4 * jdn + 139361631;
   j += div(div(4 * jdn + 183187720, 146097) * 3, 4) * 4 - 3908;
-  const i = div((j % 1461) / 4) * 5 + 308;
-  const gd = div((i % 153) / 5) + 1;
-  const gm = ((div(i, 153) % 12) + 1) as number;
+  const i = div(j % 1461, 4) * 5 + 308;
+  const gd = div(i % 153, 5) + 1;
+  const gm = (div(i, 153) % 12) + 1;
   const gy = div(j, 1461) - 100100 + div(8 - gm, 6);
   return { gy, gm, gd };
 }
