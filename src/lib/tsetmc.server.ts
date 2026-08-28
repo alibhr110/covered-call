@@ -74,7 +74,7 @@ async function fetchRaw(): Promise<string[]> {
             "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36",
           Accept: "*/*",
         },
-        signal: AbortSignal.timeout(15000),
+        signal: AbortSignal.timeout(9000),
       });
       if (!res.ok) {
         lastErr = `HTTP ${res.status}`;
