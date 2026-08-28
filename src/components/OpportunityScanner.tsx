@@ -218,26 +218,40 @@ export function OpportunityScanner({
 
   const loadLive = async () => {
     setLive((s) => ({ ...s, loading: true, error: null }));
-    try {
-      const res = await fetchLive();
-      if (res.error) {
-        setLive({ loading: false, error: res.error, at: res.fetchedAt, count: 0 });
-        return;
-      }
+    const apply = (newRows: typeof rows) => {
       setRows((prev) => {
         const sigma = new Map(prev.map((r) => [r.optionSymbol, r.sigmaPct]));
-        return res.rows.map((r) => ({ ...r, sigmaPct: sigma.get(r.optionSymbol) ?? r.sigmaPct }));
+        return newRows.map((r) => ({ ...r, sigmaPct: sigma.get(r.optionSymbol) ?? r.sigmaPct }));
       });
       setLive({
         loading: false,
         error: null,
-        at: res.fetchedAt,
-        count: res.rows.length,
+        at: new Date().toISOString(),
+        count: newRows.length,
       });
+    };
+
+    let serverErr = "";
+    try {
+      const res = await fetchLive();
+      if (!res.error && res.rows.length > 0) {
+        apply(res.rows);
+        return;
+      }
+      serverErr = res.error ?? "داده‌ای دریافت نشد";
     } catch (e) {
+      serverErr = e instanceof Error ? e.message : "خطا در دریافت داده از سرور";
+    }
+
+    // سرور (خارج از ایران) به TSETMC دسترسی ندارد → تلاش مستقیم از مرورگر کاربر
+    try {
+      const { fetchCallOptionsFromBrowser } = await import("@/lib/tsetmc-client");
+      apply(await fetchCallOptionsFromBrowser());
+    } catch (e) {
+      const browserErr = e instanceof Error ? e.message : String(e);
       setLive({
         loading: false,
-        error: e instanceof Error ? e.message : "خطا در دریافت داده",
+        error: `دسترسی به TSETMC ممکن نشد. سرور: ${serverErr} — مرورگر: ${browserErr}. اگر خارج از ایران هستید یا فیلترشکن روشن است، آن را خاموش کنید و دوباره تلاش کنید.`,
         at: null,
         count: 0,
       });
