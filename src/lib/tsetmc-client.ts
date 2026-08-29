@@ -18,7 +18,9 @@ export function proxyEndpoint(base: string): string {
 /** تلاش برای دریافت داده از مرورگر؛ در صورت شکست خطا پرتاب می‌شود. */
 export async function fetchCallOptionsFromBrowser(proxyBase?: string): Promise<OptionRow[]> {
   let lastErr = "";
-  const direct: string[] = proxyBase ? [proxyEndpoint(proxyBase)] : [];
+  // اگر خود داشبورد روی سرور داخل ایران اجرا شده باشد، این آدرس هم‌مبدأ جواب می‌دهد
+  const direct: string[] = ["/api/public/tsetmc"];
+  if (proxyBase) direct.push(proxyEndpoint(proxyBase));
 
   for (const url of direct) {
     if (
