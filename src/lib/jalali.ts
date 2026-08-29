@@ -1,9 +1,9 @@
 // تبدیل تاریخ شمسی به میلادی با کتابخانه استاندارد jalaali-js
-import jalaali from "jalaali-js";
+import { toGregorian } from "jalaali-js";
 
 /** تبدیل تاریخ جلالی به رشته میلادی YYYY-MM-DD */
 export function jalaliToISO(jy: number, jm: number, jd: number): string {
-  const g = jalaali.toGregorian(jy, jm, jd);
+  const g = toGregorian(jy, jm, jd);
   const p = (n: number) => String(n).padStart(2, "0");
   return `${g.gy}-${p(g.gm)}-${p(g.gd)}`;
 }
